@@ -18,7 +18,7 @@ import { freezerShelfLifeDays } from "@/lib/shelfLife";
 import type { InventoryItem, NewItem, WasteReason } from "@/lib/types";
 
 // All data lives under users/{uid}/...
-const itemsCol = (uid: string) => collection(firestore(), "users", uid, "inventoryItems");
+export const itemsCol = (uid: string) => collection(firestore(), "users", uid, "inventoryItems");
 const wasteCol = (uid: string) => collection(firestore(), "users", uid, "wasteLog");
 
 const toTs = (d: Date | null | undefined) => (d ? Timestamp.fromDate(d) : null);
@@ -62,14 +62,14 @@ function docToItem(id: string, d: DocumentData): InventoryItem {
  * snapshot listener) updates immediately, but the promise only settles once the
  * server acknowledges, which never happens while offline.
  */
-function commit(batch: WriteBatch) {
+export function commit(batch: WriteBatch) {
   batch.commit().catch((err) => {
     console.error(err);
     toast.error("Couldn't save that change. Please try again.");
   });
 }
 
-type Undo = () => void;
+export type Undo = () => void;
 
 export function subscribeActiveItems(
   uid: string,

@@ -1,9 +1,10 @@
 import "server-only";
 
 import Anthropic from "@anthropic-ai/sdk";
+import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
-import { AI_TASKS, type AiTask } from "@/lib/server/ai-config";
+import { AI_TASKS, type AiTask, type Effort } from "@/lib/server/ai-config";
 import { HttpError } from "@/lib/server/auth";
 
 let client: Anthropic | undefined;
@@ -31,19 +32,32 @@ export async function generateObject<S extends z.ZodType>({
   content,
   schema,
 }: GenerateArgs<S>): Promise<z.infer<S>> {
-  const { model, effort, maxTokens } = AI_TASKS[task];
+  const config: { model: string; effort: Effort; maxTokens: number; fallbacks?: boolean } = AI_TASKS[task];
+  const { model, effort, maxTokens } = config;
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const res = await anthropic().messages.parse({
-        model,
-        max_tokens: maxTokens,
-        system,
-        messages: [{ role: "user", content }],
-        output_config: { effort, format: zodOutputFormat(schema) },
-      });
+      const res = config.fallbacks
+        ? await anthropic().beta.messages.parse({
+            model,
+            max_tokens: maxTokens,
+            system,
+            messages: [{ role: "user", content: content as Anthropic.Beta.BetaMessageContentParam }],
+            output_config: { effort, format: betaZodOutputFormat(schema) },
+            // A classifier decline is re-run server-side on Anthropic's recommended model.
+            betas: ["server-side-fallback-2026-07-01"],
+            fallbacks: "default",
+          })
+        : await anthropic().messages.parse({
+            model,
+            max_tokens: maxTokens,
+            system,
+            messages: [{ role: "user", content }],
+            output_config: { effort, format: zodOutputFormat(schema) },
+          });
 
       if (res.stop_reason === "refusal") {
+        // With fallbacks this means the whole chain declined.
         throw new HttpError(422, "The AI declined this request");
       }
       if (res.parsed_output != null) return res.parsed_output as z.infer<S>;

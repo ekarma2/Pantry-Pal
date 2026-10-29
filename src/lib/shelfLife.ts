@@ -83,3 +83,27 @@ export function defaultLocationFor(category: string): Location {
 export function freezerShelfLifeDays(name: string, category: string): number {
   return tableShelfLifeDays(name, category, "freezer") ?? 90;
 }
+
+/** Rough category from a name, for items added without one (e.g. from the shopping list). */
+const CATEGORY_GUESSES: [RegExp, string][] = [
+  [/\bfrozen\b/, "frozen"],
+  [/\beggs?\b/, "eggs"],
+  // Before meat/dairy so "chicken broth" and "peanut butter" land here.
+  [/\b(rice|pasta|noodles|flour|oats|cereal|beans|lentils|sugar|quinoa|stock|broth|canned|spices?)\b/, "pantry"],
+  [/\b(peanut butter|ketchup|mustard|mayo\w*|sauce|dressing|vinegar|oil|salsa|soy|honey|jam|syrup)\b/, "condiments"],
+  [/\b(salmon|tuna|cod|tilapia|shrimp|prawns?|fish|scallops?|crab)\b/, "seafood"],
+  [/\b(chicken|turkey|beef|pork|lamb|steak|bacon|sausages?|ham|mince|chops?)\b/, "meat"],
+  [/\b(milk|cream|yogh?urt|kefir|cheese|cheddar|parmesan|feta|mozzarella|butter|ricotta)\b/, "dairy"],
+  [/\b(bread|bagels?|buns?|rolls?|baguette|tortillas?|pita|croissants?)\b/, "bakery"],
+  [/\b(juice|soda|water|coffee|tea|beer|wine|kombucha)\b/, "beverages"],
+  [/\b(chips|crackers|cookies|nuts|popcorn|granola|chocolate)\b/, "snacks"],
+  [
+    /\b(apples?|bananas?|berries|\w+berr(y|ies)|grapes|oranges?|lemons?|limes?|avocados?|tomato(es)?|potato(es)?|onions?|garlic|carrots?|celery|lettuce|spinach|kale|greens|herbs?|cilantro|parsley|basil|peppers?|cucumbers?|zucchini|broccoli|cauliflower|mushrooms?|ginger|corn|peas)\b/,
+    "produce",
+  ],
+];
+
+export function guessCategory(name: string): string {
+  const n = name.toLowerCase();
+  return CATEGORY_GUESSES.find(([re]) => re.test(n))?.[1] ?? "other";
+}

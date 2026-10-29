@@ -6,6 +6,8 @@ import { BarChart3, BookOpen, CalendarDays, Menu, Refrigerator, Settings, Shoppi
 import { useEffect, useRef, useState } from "react";
 import { AddSheetProvider } from "@/components/add/add-sheet";
 import { InventoryProvider } from "@/components/inventory/inventory-provider";
+import { MealsProvider } from "@/components/meals/meals-provider";
+import { SettingsProvider } from "@/components/settings-provider";
 import { useOnline } from "@/hooks/use-online";
 import { cn } from "@/lib/utils";
 
@@ -36,11 +38,15 @@ function isActive(pathname: string, href: string) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <InventoryProvider>
-      <AddSheetProvider>
-        <ShellLayout>{children}</ShellLayout>
-      </AddSheetProvider>
-    </InventoryProvider>
+    <SettingsProvider>
+      <InventoryProvider>
+        <MealsProvider>
+          <AddSheetProvider>
+            <ShellLayout>{children}</ShellLayout>
+          </AddSheetProvider>
+        </MealsProvider>
+      </InventoryProvider>
+    </SettingsProvider>
   );
 }
 
@@ -54,15 +60,33 @@ function ShellLayout({ children }: { children: React.ReactNode }) {
     function onPointerDown(e: PointerEvent) {
       if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [menuOpen]);
 
   const title = TITLES[pathname] ?? "Pantry Pal";
+
+  // Screens are client-rendered behind sign-in, so name the tab here (read out on navigation).
+  useEffect(() => {
+    document.title = title === "Pantry Pal" ? title : `${title} · Pantry Pal`;
+  }, [title]);
   const online = useOnline();
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-background px-4 py-2 focus:not-sr-only focus:fixed focus:left-2 focus:top-2"
+      >
+        Skip to content
+      </a>
       <header className="pt-safe sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
         <div className="flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -102,7 +126,7 @@ function ShellLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 px-4 pb-24 pt-4">{children}</main>
+      <main id="main" tabIndex={-1} className="flex-1 px-4 pb-24 pt-4 outline-none">{children}</main>
 
       <nav
         aria-label="Primary"

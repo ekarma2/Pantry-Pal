@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { NotificationSettings } from "@/components/alerts/notification-settings";
 import { useAuth } from "@/components/auth-provider";
 import { apiFetch } from "@/lib/api";
 
@@ -27,7 +28,7 @@ export default function SettingsPage() {
         <p className="font-medium">{user?.email}</p>
       </section>
 
-      <p className="text-sm text-muted-foreground">Notification settings arrive in build step 7.</p>
+      <NotificationSettings />
 
       <section className="space-y-2">
         <Button variant="outline" className="h-11 w-full" onClick={checkServer}>

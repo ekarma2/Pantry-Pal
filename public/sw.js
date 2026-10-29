@@ -73,13 +73,19 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  if (!event.data) return;
-  const data = event.data.json();
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data.text() };
+  }
+  // Always show something: browsers penalize pushes that don't display a notification.
   event.waitUntil(
     self.registration.showNotification(data.title || "Pantry Pal", {
-      body: data.body,
+      body: data.body || "Some food is about to expire.",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
+      tag: "daily-digest", // a new digest replaces yesterday's
       data: { url: data.url || "/?view=soon" },
     }),
   );
@@ -90,13 +96,13 @@ self.addEventListener("notificationclick", (event) => {
   const target = event.notification.data?.url || "/";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
-      for (const w of wins) {
-        if ("focus" in w) {
-          w.navigate(target);
-          return w.focus();
-        }
-      }
-      return self.clients.openWindow(target);
+      const win = wins[0];
+      if (!win) return self.clients.openWindow(target);
+      // navigate() fails for windows this worker doesn't control; open a fresh one then.
+      return win
+        .focus()
+        .then((w) => w.navigate(target))
+        .catch(() => self.clients.openWindow(target));
     }),
   );
 });

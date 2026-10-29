@@ -23,6 +23,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-waste-bar: var(--waste-bar);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -68,6 +69,7 @@
   --input: oklch(0.922 0 0);
   --ring: oklch(0.627 0.17 149.214);
   --chart-1: oklch(0.87 0 0);
+  --waste-bar: #2a78d6;
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
@@ -103,6 +105,7 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.627 0.17 149.214);
   --chart-1: oklch(0.87 0 0);
+  --waste-bar: #3987e5;
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
@@ -150,4 +153,16 @@
 }
 .animate-scan-flash {
   animation: scan-flash 0.6s ease-out;
+}
+
+/* Respect "reduce motion": keep state changes, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
